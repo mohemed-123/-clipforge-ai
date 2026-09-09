@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClipForge AI</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><main>
+<div class="brand">⚡ ClipForge AI</div>
+<h1>Turn VODs into vertical clips.</h1>
+<p class="sub">Upload a stream recording and create a ready-to-post 9:16 clip from your Chromebook.</p>
+<section class="card">
+<label class="drop"><input id="video" type="file" accept="video/*"><span id="name">Choose a video</span><small>MP4, MOV, MKV and other browser-supported files</small></label>
+<div class="row"><label>Clip length<select id="length"><option value="30">30 sec</option><option value="45">45 sec</option><option value="60" selected>60 sec</option><option value="90">90 sec</option></select></label>
+<button id="go">Create clip</button></div>
+<div id="status"></div><div id="result"></div>
+</section>
+<div class="note">This version runs in your browser, but the processing server still needs FFmpeg installed. When hosted, you only need Chrome on the Chromebook.</div>
+</main>
+<script>
+const v=document.querySelector('#video'), n=document.querySelector('#name'), s=document.querySelector('#status'), r=document.querySelector('#result');
+v.onchange=()=>n.textContent=v.files[0]?.name||'Choose a video';
+document.querySelector('#go').onclick=async()=>{
+ if(!v.files[0]) return s.textContent='Pick a video first.';
+ s.textContent='Uploading and processing…'; r.innerHTML='';
+ const fd=new FormData(); fd.append('video',v.files[0]); fd.append('length',document.querySelector('#length').value);
+ const x=await fetch('/api/process',{method:'POST',body:fd});
+ if(!x.ok){s.textContent='Something went wrong.';return}
+ const {job_id}=await x.json();
+ const timer=setInterval(async()=>{
+   const j=await fetch('/api/jobs/'+job_id).then(a=>a.json());
+   s.textContent=j.status==='done'?'Done!':j.status==='error'?'Error: '+j.error:'Processing… '+(j.progress||0)+'%';
+   if(j.status==='done'){clearInterval(timer);r.innerHTML=j.clips.map((u,i)=>`<div class="clip"><video controls src="${u}"></video><a href="${u}" download>Download clip ${i+1}</a></div>`).join('')}
+   if(j.status==='error')clearInterval(timer);
+ },1000);
+};
+</script></body></html>
