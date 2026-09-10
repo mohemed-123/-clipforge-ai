@@ -16,9 +16,9 @@ def run_job(job_id, src, length):
         # This starter server is intentionally simple and can be upgraded with
         # Whisper/highlight ranking after deployment.
         out=os.path.join(outdir,"clip_01.mp4")
-        vf="scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
+        vf="scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280"
         cmd=["ffmpeg","-y","-i",src,"-t",str(length),"-vf",vf,
-             "-c:v","libx264","-preset","veryfast","-crf","23",
+             "-c:v","libx264","-preset","ultrafast","-crf","28",
              "-c:a","aac","-movflags","+faststart",out]
         subprocess.run(cmd,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True)
         jobs[job_id]={"status":"done","progress":100,
